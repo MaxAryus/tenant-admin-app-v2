@@ -9,7 +9,8 @@ import {
   Settings as SettingsIcon,
   ChevronDown,
   User,
-  Newspaper
+  Newspaper,
+  Phone
 } from 'lucide-react';
 import { useAuth } from '../store/authStore';
 import { useCompany } from '../store/companyStore';
@@ -104,6 +105,13 @@ const Layout = () => {
                 <span>Objekte</span>
               </Link>
               <Link
+                to="/contacts"
+                className={`flex items-center gap-3 px-6 py-3 hover:bg-white/10 transition-colors ${isActive('/contacts')}`}
+              >
+                <Phone size={20} />
+                <span>Kontakte</span>
+              </Link>
+              <Link
                 to="/tickets"
                 className={`flex items-center justify-between px-6 py-3 hover:bg-white/10 transition-colors ${isActive('/tickets')}`}
               >
@@ -178,43 +186,50 @@ const Layout = () => {
 
       {/* Mobile Bottom Navigation */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
-        <div className="flex justify-around items-center h-16">
+        <div className="grid grid-cols-6 h-16">
           <Link
             to="/dashboard"
-            className={`flex flex-col items-center justify-center flex-1 h-full ${isMobileActive('/dashboard')}`}
+            className={`flex flex-col items-center justify-center ${isMobileActive('/dashboard')}`}
           >
             <LayoutGrid size={24} />
             <span className="text-xs mt-1">Übersicht</span>
           </Link>
           <Link
             to="/users"
-            className={`flex flex-col items-center justify-center flex-1 h-full ${isMobileActive('/users')}`}
+            className={`flex flex-col items-center justify-center ${isMobileActive('/users')}`}
           >
             <Users size={24} />
             <span className="text-xs mt-1">Benutzer</span>
           </Link>
           <Link
-            to="/tickets"
-            className={`relative flex flex-col items-center justify-center flex-1 h-full ${isMobileActive('/tickets')}`}
-          >
-            <TicketCheck size={24} />
-            <span className="text-xs mt-1">Tickets</span>
-            {openTicketsCount > 0 && (
-              <span className="absolute top-1 right-6 bg-amber-500 text-white px-1.5 py-0.5 rounded-full text-xs font-medium min-w-[20px] text-center">
-                {openTicketsCount}
-              </span>
-            )}
-          </Link>
-          <Link
             to="/objects"
-            className={`flex flex-col items-center justify-center flex-1 h-full ${isMobileActive('/objects')}`}
+            className={`flex flex-col items-center justify-center ${isMobileActive('/objects')}`}
           >
             <Building2 size={24} />
             <span className="text-xs mt-1">Objekte</span>
           </Link>
           <Link
+            to="/contacts"
+            className={`flex flex-col items-center justify-center ${isMobileActive('/contacts')}`}
+          >
+            <Phone size={24} />
+            <span className="text-xs mt-1">Kontakte</span>
+          </Link>
+          <Link
+            to="/tickets"
+            className={`relative flex flex-col items-center justify-center ${isMobileActive('/tickets')}`}
+          >
+            <TicketCheck size={24} />
+            <span className="text-xs mt-1">Tickets</span>
+            {openTicketsCount > 0 && (
+              <span className="absolute top-1 right-2 bg-amber-500 text-white px-1.5 py-0.5 rounded-full text-xs font-medium min-w-[20px] text-center">
+                {openTicketsCount}
+              </span>
+            )}
+          </Link>
+          <Link
             to="/news"
-            className={`flex flex-col items-center justify-center flex-1 h-full ${isMobileActive('/news')}`}
+            className={`flex flex-col items-center justify-center ${isMobileActive('/news')}`}
           >
             <Newspaper size={24} />
             <span className="text-xs mt-1">News</span>
@@ -223,6 +238,6 @@ const Layout = () => {
       </nav>
     </div>
   );
-}
+};
 
 export default Layout;

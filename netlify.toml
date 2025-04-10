@@ -1,0 +1,27 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Redirect all routes to index.html for client-side routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = true # MUST be added to ensure SPA routes work
+  headers = {X-From = "Netlify"}
+
+# Handle 404s
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 404
+
+# Security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Content-Security-Policy = "default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;"

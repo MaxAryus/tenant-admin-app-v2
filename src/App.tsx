@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard';
 import Tickets from './pages/Tickets';
 import Objects from './pages/Objects';
 import News from './pages/News';
+import Contacts from './pages/Contacts';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -31,6 +32,7 @@ function App() {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="users" element={<Users />} />
           <Route path="objects" element={<Objects />} />
+          <Route path="contacts" element={<Contacts />} />
           <Route path="tickets" element={<Tickets />} />
           <Route path="news" element={<News />} />
           <Route path="settings" element={<Settings />} />
@@ -40,4 +42,4 @@ function App() {
   );
 }
 
-export default App;
+export default App

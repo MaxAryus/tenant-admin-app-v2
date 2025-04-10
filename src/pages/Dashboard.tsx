@@ -7,6 +7,37 @@ import { useTickets } from '../store/ticketStore';
 import { useUsers } from '../store/userStore';
 import UserModal from '../components/UserModal';
 
+const StatCardSkeleton = () => (
+  <div className="bg-white rounded-xl shadow-sm p-6 animate-pulse">
+    <div className="flex items-start justify-between">
+      <div className="space-y-3">
+        <div className="h-4 w-24 bg-gray-200 rounded"></div>
+        <div className="h-8 w-16 bg-gray-200 rounded"></div>
+      </div>
+      <div className="h-12 w-12 bg-gray-200 rounded-lg"></div>
+    </div>
+    <div className="mt-4 flex items-center">
+      <div className="h-4 w-32 bg-gray-200 rounded"></div>
+      <div className="ml-2 h-4 w-4 bg-gray-200 rounded"></div>
+    </div>
+  </div>
+);
+
+const UserSkeleton = () => (
+  <div className="py-3 animate-pulse">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <div className="h-10 w-10 rounded-full bg-gray-200"></div>
+        <div className="space-y-2">
+          <div className="h-4 w-32 bg-gray-200 rounded"></div>
+          <div className="h-3 w-24 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+      <div className="h-8 w-8 bg-gray-200 rounded"></div>
+    </div>
+  </div>
+);
+
 const StatCard = ({ title, value, icon: Icon, link, color, badge }: {
   title: string;
   value: number;
@@ -58,19 +89,10 @@ const Dashboard = () => {
 
   const handleUserClick = (user: any) => {
     navigate('/users');
-    // Small delay to ensure navigation completes before showing modal
     setTimeout(() => {
       setSelectedUser(user);
     }, 100);
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -90,35 +112,46 @@ const Dashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Benutzer Gesamt"
-          value={stats?.totalUsers || 0}
-          icon={Users}
-          link="/users"
-          color="bg-blue-500"
-        />
-        <StatCard
-          title="Objekte Gesamt"
-          value={stats?.totalObjects || 0}
-          icon={Building2}
-          link="/objects"
-          color="bg-emerald-500"
-        />
-        <StatCard
-          title="Wohnungen Gesamt"
-          value={stats?.totalApartments || 0}
-          icon={Home}
-          link="/objects"
-          color="bg-purple-500"
-        />
-        <StatCard
-          title="Schadensmeldungen"
-          value={openTicketsCount || 0}
-          icon={TicketCheck}
-          link="/tickets"
-          color="bg-amber-500"
-          badge={openTicketsCount}
-        />
+        {loading ? (
+          <>
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </>
+        ) : (
+          <>
+            <StatCard
+              title="Benutzer Gesamt"
+              value={stats?.totalUsers || 0}
+              icon={Users}
+              link="/users"
+              color="bg-blue-500"
+            />
+            <StatCard
+              title="Objekte Gesamt"
+              value={stats?.totalObjects || 0}
+              icon={Building2}
+              link="/objects"
+              color="bg-emerald-500"
+            />
+            <StatCard
+              title="Wohnungen Gesamt"
+              value={stats?.totalApartments || 0}
+              icon={Home}
+              link="/objects"
+              color="bg-purple-500"
+            />
+            <StatCard
+              title="Schadensmeldungen"
+              value={openTicketsCount || 0}
+              icon={TicketCheck}
+              link="/tickets"
+              color="bg-amber-500"
+              badge={openTicketsCount}
+            />
+          </>
+        )}
       </div>
 
       <div className="bg-white rounded-xl shadow-sm p-6">
@@ -134,7 +167,13 @@ const Dashboard = () => {
         </div>
 
         <div className="divide-y divide-gray-100">
-          {stats?.recentUsers.map((user) => (
+          {loading ? (
+            <>
+              <UserSkeleton />
+              <UserSkeleton />
+              <UserSkeleton />
+            </>
+          ) : stats?.recentUsers.map((user) => (
             <div
               key={user.user_id}
               className="py-3 flex items-center justify-between cursor-pointer hover:bg-gray-50"

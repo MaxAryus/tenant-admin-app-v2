@@ -11,6 +11,8 @@ import Tickets from './pages/Tickets';
 import Objects from './pages/Objects';
 import News from './pages/News';
 import Contacts from './pages/Contacts';
+import Success from './pages/Success';
+import Cancel from './pages/Cancel';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -20,6 +22,8 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify" element={<VerifyOTP />} />
+        <Route path="/success" element={<Success />} />
+        <Route path="/cancel" element={<Cancel />} />
         <Route
           path="/"
           element={
@@ -42,4 +46,4 @@ function App() {
   );
 }
 
-export default App
+export default App;

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
 import { Building2, Mail, Phone, MapPin, Loader2, ArrowLeft } from 'lucide-react';
 
 const Register = () => {
@@ -15,6 +14,8 @@ const Register = () => {
     zipCode: '',
     city: '',
     land: 'Deutschland',
+    firstName: '',
+    lastName: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -23,32 +24,43 @@ const Register = () => {
     setError(null);
 
     try {
-      // First create the company
-      const { data: company, error: companyError } = await supabase
-        .from('companies')
-        .insert({
-          name: formData.name,
-          street: formData.street,
-          zip_code: parseInt(formData.zipCode),
-          city: formData.city,
-          land: formData.land,
-        })
-        .select()
-        .single();
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/register-company`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            company: {
+              name: formData.name,
+              street: formData.street,
+              zipCode: parseInt(formData.zipCode),
+              city: formData.city,
+              land: formData.land,
+            },
+            admin: {
+              firstName: formData.firstName,
+              lastName: formData.lastName,
+              email: formData.email,
+              phoneNumber: formData.phone || undefined,
+            },
+          }),
+        }
+      );
 
-      if (companyError) throw companyError;
+      const data = await response.json();
 
-      // Then create the user with magic link
-      const { error: authError } = await supabase.auth.signInWithOtp({
-        email: formData.email,
-      });
+      if (!response.ok) {
+        throw new Error(data.error || 'Registration failed');
+      }
 
-      if (authError) throw authError;
-
-      // Show success message and redirect
-      navigate('/verify', {
+      // Redirect to login with email pre-filled
+      navigate('/login', { 
         state: { 
-          message: 'Registrierung erfolgreich! Bitte überprüfen Sie Ihre E-Mail für weitere Anweisungen.'
+          email: formData.email,
+          message: 'Registrierung erfolgreich! Bitte melden Sie sich an.'
         }
       });
     } catch (error: any) {
@@ -130,6 +142,35 @@ const Register = () => {
                       value={formData.phone}
                       onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                       className="block w-full pl-10 rounded-lg border border-gray-300 px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                      Vorname
+                    </label>
+                    <input
+                      type="text"
+                      id="firstName"
+                      value={formData.firstName}
+                      onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                      required
+                      className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                      Nachname
+                    </label>
+                    <input
+                      type="text"
+                      id="lastName"
+                      value={formData.lastName}
+                      onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                      required
+                      className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                     />
                   </div>
                 </div>

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './authStore';
+import { useStripe } from './stripeStore';
 
 interface Company {
   id: string;
@@ -67,6 +68,20 @@ export const useCompany = create<CompanyState>((set) => ({
         street: companyData[0].street,
         logo_url: companyData[0].logo_url,
       };
+
+      // Also fetch subscription data
+      const { data: subscriptionData, error: subscriptionError } = await supabase
+        .from('company_subscriptions')
+        .select('*')
+        .eq('company_id', company.id)
+        .maybeSingle();
+
+      if (subscriptionError) {
+        console.error('Error fetching subscription:', subscriptionError);
+      } else if (subscriptionData) {
+        // Update subscription state in stripe store
+        useStripe.getState().setSubscription(subscriptionData);
+      }
 
       set({ company, error: null });
     } catch (error: any) {

@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Users, Building2, Home, ArrowRight, Eye, Calendar, TicketCheck } from 'lucide-react';
+import { Users, Building2, Home, ArrowRight, Eye, Calendar, TicketCheck, ChevronRight } from 'lucide-react';
 import { useDashboard } from '../store/dashboardStore';
 import { useCompany } from '../store/companyStore';
 import { useTickets } from '../store/ticketStore';
 import { useUsers } from '../store/userStore';
+import { useStripe } from '../store/stripeStore';
 import UserModal from '../components/UserModal';
 
 const StatCardSkeleton = () => (
@@ -78,14 +79,16 @@ const Dashboard = () => {
   const { company } = useCompany();
   const { openTicketsCount, fetchOpenTicketsCount } = useTickets();
   const { setSelectedUser, selectedUser } = useUsers();
+  const { subscription, loading: subscriptionLoading, error: subscriptionError, fetchSubscription } = useStripe();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (company) {
       fetchStats();
       fetchOpenTicketsCount();
+      fetchSubscription();
     }
-  }, [company, fetchStats, fetchOpenTicketsCount]);
+  }, [company, fetchStats, fetchOpenTicketsCount, fetchSubscription]);
 
   const handleUserClick = (user: any) => {
     navigate('/users');
@@ -153,6 +156,27 @@ const Dashboard = () => {
           </>
         )}
       </div>
+
+      {/* Subscription Info */}
+      {(!subscription || subscription.subscription_status !== 'active') && (
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Upgrade verfügbar</h2>
+              <p className="mt-1 text-sm text-gray-600">
+                Erweitern Sie Ihre Möglichkeiten mit einem Premium-Plan
+              </p>
+            </div>
+            <Link
+              to="/settings"
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+            >
+              <span>Pläne anzeigen</span>
+              <ChevronRight className="h-5 w-5" />
+            </Link>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">

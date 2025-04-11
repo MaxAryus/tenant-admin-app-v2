@@ -1,15 +1,40 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Loader2, Mail, Lock } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [showTokenInput, setShowTokenInput] = useState(false);
   const [token, setToken] = useState('');
+  const [countdown, setCountdown] = useState(0);
+
+  useEffect(() => {
+    // Check for pre-filled email from registration
+    const state = location.state as { email?: string; message?: string };
+    if (state?.email) {
+      setEmail(state.email);
+    }
+    if (state?.message) {
+      setMessage(state.message);
+    }
+    // Clear the state after using it
+    navigate(location.pathname, { replace: true });
+  }, [location, navigate]);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (countdown > 0) {
+      timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [countdown]);
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,12 +49,19 @@ const Login = () => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.status === 429) {
+          setCountdown(15); // Set 15 seconds cooldown
+          throw new Error('Bitte warten Sie einen Moment, bevor Sie einen neuen Code anfordern.');
+        }
+        throw error;
+      }
       
       setShowTokenInput(true);
       setMessage('Bitte überprüfen Sie Ihre E-Mail auf den Bestätigungscode!');
-    } catch (error) {
-      setMessage('Fehler beim Senden des Bestätigungscodes. Bitte versuchen Sie es erneut.');
+      setCountdown(15); // Set cooldown after successful request
+    } catch (error: any) {
+      setMessage(error.message || 'Fehler beim Senden des Bestätigungscodes. Bitte versuchen Sie es erneut.');
     } finally {
       setLoading(false);
     }
@@ -93,7 +125,7 @@ const Login = () => {
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || countdown > 0}
                 className="w-full bg-emerald-600 text-white px-4 py-2.5 rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all disabled:opacity-50 flex items-center justify-center"
               >
                 {loading ? (
@@ -101,6 +133,8 @@ const Login = () => {
                     <Loader2 className="h-5 w-5 animate-spin mr-2" />
                     <span>Wird gesendet...</span>
                   </>
+                ) : countdown > 0 ? (
+                  `Bitte warten (${countdown}s)`
                 ) : (
                   'Anmelden'
                 )}
@@ -150,8 +184,13 @@ const Login = () => {
                     setMessage('');
                   }}
                   className="text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                  disabled={countdown > 0}
                 >
-                  Andere E-Mail-Adresse verwenden
+                  {countdown > 0 ? (
+                    `Neue E-Mail in ${countdown}s`
+                  ) : (
+                    'Andere E-Mail-Adresse verwenden'
+                  )}
                 </button>
               </div>
             </form>
@@ -159,7 +198,7 @@ const Login = () => {
 
           {message && (
             <div className={`mt-4 p-4 rounded-lg text-sm ${
-              message.includes('Fehler') 
+              message.includes('Fehler') || message.includes('warten')
                 ? 'bg-red-50 text-red-800' 
                 : 'bg-emerald-50 text-emerald-800'
             }`}>

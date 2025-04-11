@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../store/authStore';
 import { useCompany } from '../store/companyStore';
 import { useAdmins } from '../store/adminStore';
+import { useStripe } from '../store/stripeStore';
 import { 
   LogOut, 
   Building2, 
@@ -13,26 +14,70 @@ import {
   UserPlus,
   User,
   Calendar,
-  Loader2
+  Loader2,
+  CreditCard,
+  AlertTriangle,
+  CheckCircle2,
+  ChevronRight,
+  Package
 } from 'lucide-react';
 import InviteAdminModal from '../components/InviteAdminModal';
+import PricingPlans from '../components/PricingPlans';
+import { STRIPE_PRODUCTS } from '../stripe-config';
 
 const Settings = () => {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, session } = useAuth();
   const { company } = useCompany();
   const { admins, loading, error, fetchAdmins } = useAdmins();
+  const { subscription, loading: subscriptionLoading, error: subscriptionError, fetchSubscription, createCustomerPortalSession } = useStripe();
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [managingSubscription, setManagingSubscription] = useState(false);
+  const [showPlansModal, setShowPlansModal] = useState(false);
 
   useEffect(() => {
+    if (!session) {
+      navigate('/login');
+      return;
+    }
+
     if (company) {
       fetchAdmins();
+      fetchSubscription();
     }
-  }, [company, fetchAdmins]);
+  }, [company, fetchAdmins, fetchSubscription, session, navigate]);
 
   const handleLogout = async () => {
     await signOut();
     navigate('/login');
+  };
+
+  const handleManageSubscription = async () => {
+    try {
+      setManagingSubscription(true);
+      const url = await createCustomerPortalSession();
+      window.location.href = url;
+    } catch (error) {
+      console.error('Error opening customer portal:', error);
+    } finally {
+      setManagingSubscription(false);
+    }
+  };
+
+  const formatDate = (timestamp: number | null) => {
+    if (!timestamp) return null;
+    return new Date(timestamp * 1000).toLocaleDateString('de-DE', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const getCurrentPlanName = () => {
+    if (!subscription?.price_id) return 'Kostenlos';
+    
+    const plan = Object.values(STRIPE_PRODUCTS).find(p => p.priceId === subscription.price_id);
+    return plan ? plan.name : 'Kostenlos';
   };
 
   return (
@@ -63,6 +108,96 @@ const Settings = () => {
               <p className="text-sm text-gray-500">{company?.land}</p>
             </div>
           </div>
+        </div>
+
+        {/* Subscription Management */}
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-100 rounded-lg">
+                <Package className="h-5 w-5 text-emerald-600" />
+              </div>
+              <h2 className="text-lg font-medium text-gray-900">Abonnement</h2>
+            </div>
+          </div>
+
+          {subscriptionLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+            </div>
+          ) : subscriptionError ? (
+            <div className="bg-red-50 text-red-800 p-4 rounded-lg flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 flex-shrink-0" />
+              <p>{subscriptionError}</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Current Plan */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium text-gray-900">Aktueller Plan</h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {subscription?.subscription_status === 'active' ? (
+                        <>
+                          <span className="inline-flex items-center gap-1 text-emerald-700">
+                            <CheckCircle2 className="h-4 w-4" />
+                            {getCurrentPlanName()}
+                          </span>
+                          <span className="mx-2">•</span>
+                          {subscription.max_objects} Objekte
+                        </>
+                      ) : (
+                        'Kostenlos'
+                      )}
+                    </p>
+                  </div>
+                  {subscription?.subscription_status === 'active' && (
+                    <div className="text-sm text-gray-600">
+                      Nächste Abrechnung: {formatDate(subscription.current_period_end)}
+                    </div>
+                  )}
+                </div>
+
+                {subscription?.payment_method_brand && (
+                  <div className="mt-4 flex items-center gap-2 text-sm text-gray-600">
+                    <CreditCard className="h-4 w-4" />
+                    <span className="capitalize">{subscription.payment_method_brand}</span>
+                    <span>•••• {subscription.payment_method_last4}</span>
+                  </div>
+                )}
+
+                <div className="mt-4 flex flex-col sm:flex-row gap-3">
+                  {subscription?.subscription_status === 'active' && (
+                    <button
+                      onClick={handleManageSubscription}
+                      disabled={managingSubscription}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    >
+                      {managingSubscription ? (
+                        <>
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                          <span>Wird geladen...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Abonnement verwalten</span>
+                          <ChevronRight className="h-5 w-5" />
+                        </>
+                      )}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowPlansModal(true)}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                  >
+                    <span>Pläne anzeigen</span>
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Admin Management */}
@@ -187,6 +322,14 @@ const Settings = () => {
 
       {showInviteModal && (
         <InviteAdminModal onClose={() => setShowInviteModal(false)} />
+      )}
+
+      {showPlansModal && (
+        <PricingPlans
+          currentPlan={subscription?.price_id}
+          isModal={true}
+          onClose={() => setShowPlansModal(false)}
+        />
       )}
     </div>
   );
